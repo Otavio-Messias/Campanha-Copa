@@ -16,8 +16,25 @@ CLIENTES_EXCLUIR = [
     "mercedes benz",
     "mercedes-benz",
     "uberdiesel",
+]
+
+CLIENTES_EXCLUIR_EXATOS = [
     "com energia ltda",
 ]
+
+
+def _filtrar_clientes(df):
+    mask = pd.Series([True] * len(df), index=df.index)
+    
+    # Correspondência parcial — remove qualquer nome que CONTENHA o termo
+    for termo in CLIENTES_EXCLUIR:
+        mask = mask & ~df["nome_cliente"].str.lower().str.contains(termo, na=False)
+    
+    # Correspondência exata — remove apenas se o nome for EXATAMENTE igual
+    for termo in CLIENTES_EXCLUIR_EXATOS:
+        mask = mask & ~(df["nome_cliente"].str.lower().str.strip() == termo)
+    
+    return df[mask].copy()
 
 
 def _load_auxiliares():
@@ -123,9 +140,6 @@ def _enrich(df, vendedores, empresas_map):
     return df
 
 
-# Valor mínimo para participação na campanha de Peças e Serviços
-VALOR_MINIMO_PECAS = 1000.00
-
 def _agrupar_notas(df):
     grouped = (
         df.groupby(
@@ -136,14 +150,6 @@ def _agrupar_notas(df):
         )
         .agg(preco_final=("preco_final", "sum"))
     )
-
-    # Regra Peças e Serviços: só participam notas com valor total >= R$ 1.000,00
-    # Validação feita APÓS o agrupamento para comparar o valor total da nota
-    # (soma de todos os itens), não o valor de cada item individualmente.
-    mask_pecas = grouped["tipo_campanha"] == "Peças e Serviços"
-    mask_abaixo = grouped["preco_final"] < VALOR_MINIMO_PECAS
-    grouped = grouped[~(mask_pecas & mask_abaixo)].copy()
-
     return grouped
 
 
