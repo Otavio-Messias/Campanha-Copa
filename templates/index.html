@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campanha Copa — Dashboard Executivo</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <i class="fa-solid fa-trophy"></i>
+      <span class="logo-text">CAMPANHA <strong>COPA</strong></span>
+    </div>
+    <div class="header-subtitle">Dashboard Executivo de Campanhas Comerciais</div>
+  </div>
+  <div class="header-right">
+    <div class="status-bar" id="statusBar">
+      <i class="fa-solid fa-circle-check"></i>
+      <span id="statusText">Aguardando dados...</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-upload" onclick="toggleUpload()">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Enviar Arquivos
+      </button>
+      <button class="btn btn-update" onclick="atualizarDados()">
+        <i class="fa-solid fa-rotate"></i> Atualizar Dados
+      </button>
+      <button class="btn btn-export-excel" onclick="exportarExcel()">
+        <i class="fa-solid fa-file-excel"></i> Exportar Excel
+      </button>
+      <button class="btn btn-export-pdf" onclick="exportarPDF()">
+        <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+      </button>
+      <button class="btn btn-screenshot" onclick="baixarPNG()">
+        <i class="fa-solid fa-image"></i> Baixar PNG
+      </button>
+      <button class="btn btn-logout" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- UPLOAD PANEL -->
+<div class="upload-panel" id="uploadPanel" style="display:none;">
+  <div class="upload-inner">
+    <div class="upload-section">
+      <h3><i class="fa-solid fa-database"></i> Dados da Campanha</h3>
+      <p class="upload-hint">Arquivos do ERP — nomeie como <code>Semana 1 Pneus.xlsx</code>, <code>Semana 2 Peças e Serviços.xlsx</code>, etc.</p>
+      <div class="dropzone" id="dropzoneDados"
+           ondragover="event.preventDefault(); this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event, 'dados')">
+        <i class="fa-solid fa-file-arrow-up"></i>
+        <p>Arraste os arquivos aqui ou <label for="inputDados" class="link-upload">clique para selecionar</label></p>
+        <input type="file" id="inputDados" multiple accept=".xlsx,.xls" style="display:none" onchange="uploadDados(this.files)">
+      </div>
+      <div id="uploadDadosStatus"></div>
+    </div>
+
+    <div class="upload-divider"></div>
+
+    <div class="upload-section">
+      <h3><i class="fa-solid fa-table"></i> Arquivos Auxiliares</h3>
+      <p class="upload-hint">Atualize os cadastros de vendedores e empresas.</p>
+      <div class="aux-grid">
+        <div class="aux-item">
+          <label>Vendedores.xlsx</label>
+          <div class="aux-upload-row">
+            <input type="file" id="auxVendedores" accept=".xlsx,.xls">
+            <span class="aux-status" id="stVendedores"></span>
+          </div>
+        </div>
+        <div class="aux-item">
+          <label>Empresas Pneus.xlsx</label>
+          <div class="aux-upload-row">
+            <input type="file" id="auxEmpPneus" accept=".xlsx,.xls">
+            <span class="aux-status" id="stEmpPneus"></span>
+          </div>
+        </div>
+        <div class="aux-item">
+          <label>Empresas Peças e Serviços.xlsx</label>
+          <div class="aux-upload-row">
+            <input type="file" id="auxEmpPecas" accept=".xlsx,.xls">
+            <span class="aux-status" id="stEmpPecas"></span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-update" style="margin-top:12px" onclick="uploadAuxiliares()">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Enviar Auxiliares
+      </button>
+      <div id="uploadAuxStatus"></div>
+    </div>
+
+    <div class="upload-divider"></div>
+
+    <div class="upload-section">
+      <h3><i class="fa-solid fa-folder-open"></i> Arquivos na Nuvem</h3>
+      <div id="listaArquivos"><p class="text-muted">Carregando...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<section class="filters-section">
+  <div class="filters-inner">
+    <div class="filter-group">
+      <label><i class="fa-solid fa-tags"></i> Tipo de Campanha</label>
+      <div class="tab-toggle" id="tipoCampanha">
+        <button class="tab-btn active" data-value="Pneus" onclick="setTipo(this)">
+          <i class="fa-solid fa-circle-dot"></i> Pneus
+        </button>
+        <button class="tab-btn" data-value="Peças e Serviços" onclick="setTipo(this)">
+          <i class="fa-solid fa-wrench"></i> Peças e Serviços
+        </button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label><i class="fa-solid fa-calendar-week"></i> Semana</label>
+      <select id="semanaSelect" class="filter-select" onchange="onSemanaChange()">
+        <option value="Todas">📅 Todas as Semanas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label><i class="fa-solid fa-chart-bar"></i> Visualização</label>
+      <div class="tab-toggle">
+        <button class="tab-btn active" id="btnDashboard" onclick="showView('dashboard')">
+          <i class="fa-solid fa-gauge"></i> Dashboard
+        </button>
+        <button class="tab-btn" id="btnComparativo" onclick="showView('comparativo')">
+          <i class="fa-solid fa-chart-line"></i> Comparativo
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner">
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    <p>Processando dados...</p>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" id="mainContent">
+
+  <!-- VIEW: DASHBOARD -->
+  <div id="viewDashboard">
+    <section class="kpi-grid">
+      <div class="kpi-card kpi-fat">
+        <div class="kpi-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Faturamento Total</div><div class="kpi-value" id="kpiFaturamento">—</div></div>
+      </div>
+      <div class="kpi-card kpi-ticket">
+        <div class="kpi-icon"><i class="fa-solid fa-ticket"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Ticket Médio</div><div class="kpi-value" id="kpiTicket">—</div></div>
+      </div>
+      <div class="kpi-card kpi-vendas">
+        <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Quantidade de Vendas</div><div class="kpi-value" id="kpiVendas">—</div></div>
+      </div>
+      <div class="kpi-card kpi-clientes">
+        <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Clientes Únicos</div><div class="kpi-value" id="kpiClientes">—</div></div>
+      </div>
+      <div class="kpi-card kpi-vendedores">
+        <div class="kpi-icon"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Vendedores Únicos</div><div class="kpi-value" id="kpiVendedores">—</div></div>
+      </div>
+      <div class="kpi-card kpi-empresas">
+        <div class="kpi-icon"><i class="fa-solid fa-building"></i></div>
+        <div class="kpi-body"><div class="kpi-label">Empresas Únicas</div><div class="kpi-value" id="kpiEmpresas">—</div></div>
+      </div>
+    </section>
+
+    <div class="charts-grid charts-2col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-ranking-star"></i> Top 10 Vendedores — Quantidade</h3></div><div class="chart-body"><canvas id="chartVendQtd"></canvas></div></div>
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-sack-dollar"></i> Top 10 Vendedores — R$</h3></div><div class="chart-body"><canvas id="chartVendVal"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-2col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-users"></i> Top 10 Compradores — Quantidade</h3></div><div class="chart-body"><canvas id="chartCompQtd"></canvas></div></div>
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-cart-shopping"></i> Top 10 Compradores — R$</h3></div><div class="chart-body"><canvas id="chartCompVal"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-2col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-building"></i> Empresas com Mais Vendas</h3></div><div class="chart-body"><canvas id="chartEmpQtd"></canvas></div></div>
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-building-columns"></i> Empresas com Maior Faturamento</h3></div><div class="chart-body"><canvas id="chartEmpVal"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-1col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-calendar-days"></i> Faturamento por Dia</h3></div><div class="chart-body chart-body-tall"><canvas id="chartFatDia"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- VIEW: COMPARATIVO -->
+  <div id="viewComparativo" style="display:none;">
+    <div class="charts-grid charts-1col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-chart-line"></i> Faturamento por Semana</h3></div><div class="chart-body chart-body-tall"><canvas id="chartEvoFat"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-2col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-receipt"></i> Qtd. Vendas por Semana</h3></div><div class="chart-body"><canvas id="chartEvoQtd"></canvas></div></div>
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-ticket"></i> Ticket Médio por Semana</h3></div><div class="chart-body"><canvas id="chartEvoTicket"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-2col">
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-users"></i> Clientes Únicos por Semana</h3></div><div class="chart-body"><canvas id="chartEvoClientes"></canvas></div></div>
+      <div class="chart-card"><div class="chart-header"><h3><i class="fa-solid fa-user-tie"></i> Vendedores Únicos por Semana</h3></div><div class="chart-body"><canvas id="chartEvoVendedores"></canvas></div></div>
+    </div>
+    <div class="charts-grid charts-1col">
+      <div class="chart-card">
+        <div class="chart-header"><h3><i class="fa-solid fa-table"></i> Tabela Comparativa por Semana</h3></div>
+        <div class="chart-body">
+          <table id="tabelaComparativo" class="display" style="width:100%">
+            <thead><tr><th>Semana</th><th>Faturamento (R$)</th><th>Qtd. Vendas</th><th>Ticket Médio (R$)</th><th>Clientes Únicos</th><th>Vendedores Únicos</th></tr></thead>
+            <tbody id="tabelaComparativoBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-info">
+    <span id="footerArquivos">Nenhum arquivo carregado</span>
+    <span class="footer-sep">|</span>
+    <span id="footerTimestamp"></span>
+  </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>
