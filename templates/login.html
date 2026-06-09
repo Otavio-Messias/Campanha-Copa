@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campanha Copa — Acesso</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --gold: #f0c040; --blue: #1f6feb; --text: #e6edf3; --muted: #8b949e;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .logo { font-size: 32px; color: var(--gold); margin-bottom: 8px; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: var(--muted); margin-bottom: 36px; }
+    .field { text-align: left; margin-bottom: 16px; }
+    .field label { display:block; font-size: 12px; color: var(--muted); font-weight:600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .field input {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: var(--blue); }
+    .btn-login {
+      width: 100%;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-login:hover { background: #1a5fcf; }
+    .erro { color: #ff6b6b; font-size: 13px; margin-top: 12px; display:none; }
+  </style>
+</head>
+<body>
+<div class="login-box">
+  <div class="logo"><i class="fa-solid fa-trophy"></i></div>
+  <h1>CAMPANHA COPA</h1>
+  <p class="sub">Dashboard Executivo — Acesso Restrito</p>
+
+  <div class="field">
+    <label>Senha de acesso</label>
+    <input type="password" id="senha" placeholder="Digite a senha..." onkeydown="if(event.key==='Enter') entrar()">
+  </div>
+  <button class="btn-login" onclick="entrar()">
+    <i class="fa-solid fa-right-to-bracket"></i> Entrar
+  </button>
+  <p class="erro" id="erroMsg"><i class="fa-solid fa-circle-exclamation"></i> Senha incorreta</p>
+</div>
+
+<script>
+  // Se já autenticado, redireciona
+  if (sessionStorage.getItem("auth") === "1") location.href = "/";
+
+  function entrar() {
+    const senha = document.getElementById("senha").value;
+    fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senha })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        sessionStorage.setItem("auth", "1");
+        location.href = "/";
+      } else {
+        document.getElementById("erroMsg").style.display = "block";
+      }
+    });
+  }
+</script>
+</body>
+</html>
