@@ -11,7 +11,13 @@ AUX_VENDEDORES = AUX_DIR / "Vendedores.xlsx"
 AUX_EMP_PNEUS = AUX_DIR / "Empresas Pneus.xlsx"
 AUX_EMP_PECAS = AUX_DIR / "Empresas Peças e Serviços.xlsx"
 
-CLIENTES_EXCLUIR = ["prodoeste", "mercedes benz", "uberdiesel"]
+CLIENTES_EXCLUIR = [
+    "prodoeste",
+    "mercedes benz",
+    "mercedes-benz",
+    "uberdiesel",
+    "com energia ltda",
+]
 
 
 def _load_auxiliares():
